@@ -3,23 +3,34 @@
 
 const nrow = 3;
 const ncol = 6;
-const titleBarHeight = 50;
-const sideBarWidth = 100;
+const titleBarHeight = 30;
+const sideBarWidth = 100; // 100
 const subGridWidth = 400;
-const subGridHeight = 425;
+const subGridHeight = 400;
 const margin = 10;
 const gap = 10;
-const channelNames = ["Channel 1", "Channel 2", "Channel 3"];
-const title = "Title";
+const channelNames = ["ch1", "ch2", "ch3", "ch4"];
+const title = "";
+const folder_path = "";
+const postfix = "_merged.png";
+const prefix = ""
+
+const condition_list = []
+const imgs = [];
+
+for (var i = 0; i < condition_list.length; i++) {
+  imgs[i] = folder_path + "/" + prefix + condition_list[i] + postfix;
+};
 
 const channelColors = [
+  [0, 0, 0, 50], // ligth gray
   [0, 100, 100, 0], // Red
   [100, 0, 100, 0], // Green
   [100, 100, 0, 0], // Blue
 ];
-const textGap = 30;
-const sideBarFontSize = 18;
-const titleFontSize = 24;
+const textGap = 20;
+const sideBarFontSize = 20;
+const titleFontSize = 30;
 const titleFontColor = [0, 0, 0, 100]; // Black
 
 var myFont = app.fonts.item("Arial");
@@ -53,9 +64,14 @@ for (var i = 0; i < channelNames.length; i++) {
   });
 }
 app.activeDocument.colors.add({
-  name: 'title',
+  name: "title",
   model: ColorModel.process,
   colorValue: titleFontColor,
+});
+app.activeDocument.colors.add({
+  name: "coolGray",
+  model: ColorModel.process,
+  colorValue: [0, 0, 0, 20],
 });
 
 // Create guides for rows and columns that account for title bar and side bar
@@ -99,50 +115,99 @@ myPage.guides.add({
   location: margin + ncol * subGridWidth + (ncol - 1) * gap,
 });
 
-// Add channel names to the sidebar
-for (var i = 0; i < channelNames.length; i++) {
-  // Calculate vertical position for each channel name
-  var yPosition = margin + titleBarHeight + (textGap / 2) * (1 + 2 * i);
+myPage.rectangles.add({
+  geometricBounds: [margin / 2, margin / 2, myDoc.documentPreferences.pageHeight - margin / 2, myDoc.documentPreferences.pageWidth - margin / 2],
+  strokeWeight: 5,
+  strokeColor: "coolGray",
+  fillColor: "None",
+});
 
-  // Create text frame in the sidebar
-  var textFrame = myPage.textFrames.add({
-    geometricBounds: [
-      yPosition - textGap / 2, // top
-      margin + ncol * subGridWidth + (ncol - 1) * gap + sideBarWidth * 0.05, // left
-      yPosition + textGap / 2, // bottom
-      margin +
+if (sideBarWidth > 0) {
+  // Add channel names to the sidebar
+  for (var i = 0; i < channelNames.length; i++) {
+    // Calculate vertical position for each channel name
+    var yPosition = margin + titleBarHeight + (textGap / 2) * (1 + 2 * i);
+
+    // Create text frame in the sidebar
+    var textFrame = myPage.textFrames.add({
+      geometricBounds: [
+        yPosition - textGap / 2, // top
+        margin + ncol * subGridWidth + (ncol - 1) * gap + sideBarWidth * 0.05, // left
+        yPosition + textGap / 2, // bottom
+        margin +
         ncol * subGridWidth +
         (ncol - 1) * gap +
         sideBarWidth -
         sideBarWidth * 0.05, // right
-    ],
-  });
+      ],
+    });
 
-  // Add the channel name text
-  textFrame.contents = channelNames[i];
+    // Add the channel name text
+    textFrame.contents = channelNames[i];
 
-  // Set the text formatting
-  textFrame.texts[0].appliedFont = myFont;
-  textFrame.texts[0].fontStyle = "Bold";
-  textFrame.texts[0].pointSize = sideBarFontSize;
-  textFrame.textColumns.everyItem().fillColor = channelNames[i];
+    // Set the text formatting
+    textFrame.texts[0].appliedFont = myFont;
+    textFrame.texts[0].fontStyle = "Bold";
+    textFrame.texts[0].pointSize = sideBarFontSize;
+    textFrame.textColumns.everyItem().fillColor = channelNames[i];
 
-  // fit content to frame
-  textFrame.fit(FitOptions.FRAME_TO_CONTENT);
+    // fit content to frame
+    textFrame.fit(FitOptions.FRAME_TO_CONTENT);
+  }
 }
 
 // Add title text
-var titleTextFrame = myPage.textFrames.add({
-  geometricBounds: [
-    margin,
-    margin,
-    margin + titleBarHeight,
-    margin + ncol * subGridWidth + (ncol - 1) * gap + sideBarWidth,
-  ],
-});
-titleTextFrame.contents = title;
-titleTextFrame.texts[0].appliedFont = myFont;
-titleTextFrame.texts[0].fontStyle = "Bold";
-titleTextFrame.texts[0].pointSize = titleFontSize;
-titleTextFrame.textColumns.everyItem().fillColor = "title";
-titleTextFrame.fit(FitOptions.FRAME_TO_CONTENT);
+if (titleBarHeight > 0) {
+  var titleTextFrame = myPage.textFrames.add({
+    geometricBounds: [
+      margin,
+      margin,
+      margin + titleBarHeight,
+      margin + ncol * subGridWidth + (ncol - 1) * gap + sideBarWidth,
+    ],
+  });
+  titleTextFrame.contents = title;
+  titleTextFrame.texts[0].appliedFont = myFont;
+  titleTextFrame.texts[0].fontStyle = "Bold";
+  titleTextFrame.texts[0].pointSize = titleFontSize;
+  titleTextFrame.textColumns.everyItem().fillColor = "title";
+  titleTextFrame.fit(FitOptions.FRAME_TO_CONTENT);
+}
+
+var cropTop = 50; // Top crop
+var cropBottom = 50; // Bottom crop
+var cropLeft = 50; // Left crop
+var cropRight = 50; // Right crop
+
+// Add rectangular frames for each subgrid
+img_ctr = 0;
+for (var row = 0; row < nrow; row++) {
+  for (var col = 0; col < ncol; col++) {
+    // Calculate position for each subgrid
+    var top = margin + titleBarHeight + row * (subGridHeight + gap);
+    var left = margin + col * (subGridWidth + gap);
+    var bottom = top + subGridHeight;
+    var right = left + subGridWidth;
+
+    // Create rectangle frame
+    var subGridFrame = myPage.rectangles.add({
+      geometricBounds: [top, left, bottom, right],
+      strokeWeight: 0.5,
+      strokeColor: "Black",
+      fillColor: "None",
+    });
+
+    subGridFrame.place(
+      File(imgs[img_ctr])
+    );
+
+    subGridFrame.fit(FitOptions.PROPORTIONALLY);
+
+    subGridFrame.frameFittingOptions.topCrop = cropTop;
+    subGridFrame.frameFittingOptions.bottomCrop = cropBottom;
+    subGridFrame.frameFittingOptions.leftCrop = cropLeft;
+    subGridFrame.frameFittingOptions.rightCrop = cropRight;
+
+    img_ctr++;
+  }
+}
