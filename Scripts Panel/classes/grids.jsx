@@ -15,7 +15,8 @@ function subGrid(
   xlabels,
   ylabel_type,
   ylabels,
-  gridMargin
+  gridMargin,
+  strokeType,
 ) {
   this.rightTop = null;
   this.rightBottom = null;
@@ -34,11 +35,12 @@ function subGrid(
   this.postfix = postfix;
   this.gridFrameColor = gridFrameColor;
   this.byRow = byRow;
-  this.xlabel_type = xlabel_type
-  this.xlabels = xlabels
-  this.ylabel_type = ylabel_type
-  this.ylabels = ylabels
-  this.gridMargin = gridMargin
+  this.xlabel_type = xlabel_type;
+  this.xlabels = xlabels;
+  this.ylabel_type = ylabel_type;
+  this.ylabels = ylabels;
+  this.gridMargin = gridMargin;
+  this.strokeType = strokeType;
 }
 
 subGrid.prototype.setChildGrid = function (childGrid, position) {
@@ -116,6 +118,7 @@ function drawGrid(grid) {
       fillColor: myDoc.swatches.item("Paper"),
       strokeColor: myDoc.swatches.item(grid.gridFrameColor),
       strokeWeight: subGridFrameWidth,
+      strokeType: grid.strokeType,
     });
     drawGrid(grid.rightTop);
     drawGrid(grid.rightBottom);

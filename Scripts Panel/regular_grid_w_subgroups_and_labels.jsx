@@ -1,11 +1,12 @@
-#include "./classes/grids.jsx";
+#include "../classes/grids.jsx";
+#include "../constants/colors.jsx";
 
 const supTitleBarHeight = 0;
 const supSideBarWidth = 0;
-const titleBarHeight = 110;
+const titleBarHeight = 40;
 const sideBarWidth = 0;
-const subGridWidth = 300;
-const subGridHeight = 400;
+const subGridWidth = 325;
+const subGridHeight = 300;
 const gridAxesLabelFontSize = 20;
 const margin = 10;
 // margins for left, right, bottom, top
@@ -19,53 +20,35 @@ var cropRight = 100; // Right crop
 
 const textGap = 20;
 const sideBarFontSize = 20;
-const titleFontSize = 30;
+const titleFontSize = 26;
 const titleFontColor = 'black';
 const textBox = [120, 60];
 const mainTitle = "";
 
-colors = {
-  lightGray: [0, 0, 0, 50],
-  red: [0, 100, 100, 0],
-  green: [100, 0, 100, 0],
-  blue: [100, 100, 0, 0],
-  coolGray: [0, 0, 0, 20],
-  black: [0, 0, 0, 100],
-  matlabBlue: [100, 39.68, 0, 25.88],
-  matlabOrange: [0, 61.75, 88.48, 14.9],
-  matlabYellow: [0, 25.32, 86.5, 7.06],
-  matlabPurple: [11.27, 66.9, 0, 44.31],
-  matlabGreen: [30.81, 0, 72.09, 32.55],
-  matlabCyan: [67.65, 20.17, 0, 6.67],
-  matlabDarkRed: [0, 87.65, 70.99, 36.47],
-};
-
 const gridList = [
   new subGrid(
     1,
-    2,
-    "ESI, PGC induction, controls",
+    1,
+    "ESI PGC, control, 160k seed",
     ["DAPI", "EOMES", "TFAP2C", "SOX17"],
     ["lightGray", "red", "green", "blue"],
     [
-      'C3A100;B50;B50 (ESI)',
-      'C6B50;B50A10;B50 (ESI)',
-      'B50;C6B50A10;B50IWP2 (ESI)',
-      'C6B50;B50A10;B50A1IWP2 (ESI)',
-      'C6B50;B50A10;B50IWP2 (ESI)',
+      'C3A100;B50;B50'
     ],
-    "C:/Users/zhiyu/OneDrive - Umich/dump/2025-07-23/exp20/plate1/mip_montage",
     "",
-    "_merged.png",
-    "matlabGreen",
-    true,
-    "",
-    [],
+    "TFAP2C_EOMES_",
+    "_scatter_SOX17.png",
+    "blockc_531",
+    false,
     "",
     [],
-    [0, 0, 0, 20]
+    "",
+    [],
+    [0, 0, 0, 40],
+    "Solid",
   ),
 ];
+gridList[0].setChildGrid(gridList[1], 'rightTop')
 
 const rootGrid = 0;
 
@@ -73,6 +56,7 @@ const pageSize = getPageSize(gridList[rootGrid]);
 
 var myFont = app.fonts.item("Arial");
 var myDoc = app.documents.add();
+defineColors(myDoc);
 
 // set measuremnet units to points
 myDoc.viewPreferences.horizontalMeasurementUnits = MeasurementUnits.points;
@@ -93,19 +77,6 @@ myMarginPreferences.left = margin;
 myMarginPreferences.top = margin;
 myMarginPreferences.right = margin;
 myMarginPreferences.bottom = margin;
-
-for (var colorName in colors) {
-  var color = colors[colorName];
-  try {
-    myDoc.colors.add({
-      name: colorName,
-      model: ColorModel.process,
-      colorValue: color,
-    });
-  } catch (e) {
-    // Color already exists, do nothing
-  }
-}
 
 var myPage = myDoc.pages.item(0);
 myPage.rectangles.add({
