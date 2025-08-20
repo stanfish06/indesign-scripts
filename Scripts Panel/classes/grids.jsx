@@ -1,4 +1,5 @@
 // arrange the subgrids
+// TODO: indicate well position (e.g. a 3 by 6 grid and highlight the position)
 function subGrid(
   nrow,
   ncol,
@@ -251,6 +252,60 @@ function drawGrid(grid) {
             titleTextFrame.parentStory.justification = Justification.CENTER_ALIGN;
             titleTextFrame.fit(FitOptions.FRAME_TO_CONTENT);
           }
+        } else if (grid.ylabel_type == "stain_round") {
+          if ((grid.byRow && j == 0) || (!grid.byRow && i == 0)) {
+            var armLength = grid.gridMargin[0] * 0.6;
+            var cx = gridOrigin_x + grid.gridMargin[0] * 0.45;
+            var cy = subGridOrigin_y + subGridHeight * 0.45;
+            var stem = myPage.graphicLines.add();
+            stem.paths[0].entirePath = [[cx, cy], [cx, cy + armLength * 0.8]];
+            stem.strokeWeight = 4;
+            stem.endCap = EndCap.ROUND_END_CAP;
+            stem.endJoin = EndJoin.ROUND_END_JOIN;
+
+            var leftArm = myPage.graphicLines.add();
+            leftArm.paths[0].entirePath = [[cx, cy], [cx - armLength * 0.7, cy - armLength * 0.7]];
+            leftArm.strokeWeight = 4;
+            leftArm.endCap = EndCap.ROUND_END_CAP;
+            leftArm.endJoin = EndJoin.ROUND_END_JOIN;
+
+            var circleRadius = armLength * 0.4;
+            var circleCx = cx + armLength * 0.45;
+            var circleCy = cy - armLength * 0.45;
+            var circle = myPage.ovals.add();
+            circle.geometricBounds = [
+              circleCy - circleRadius,
+              circleCx - circleRadius,
+              circleCy + circleRadius,
+              circleCx + circleRadius,
+            ];
+            circle.strokeWeight = 4;
+
+            var rightArm = myPage.graphicLines.add();
+            rightArm.paths[0].entirePath = [[cx, cy], [circleCx - circleRadius / Math.sqrt(2), circleCy + circleRadius / Math.sqrt(2)]];
+            rightArm.strokeWeight = 4;
+            rightArm.endCap = EndCap.ROUND_END_CAP;
+            rightArm.endJoin = EndJoin.ROUND_END_JOIN;
+
+            var titleTextFrame = myPage.textFrames.add({
+              geometricBounds: [
+                circleCy - circleRadius * 0.35,
+                circleCx - textBox[0] * 0.5,
+                circleCy - circleRadius * 0.35 + textBox[1],
+                circleCx + textBox[0] * 0.5
+              ],
+            });
+            if (grid.byRow) {
+              titleTextFrame.contents = grid.ylabels[i];
+            } else {
+              titleTextFrame.contents = grid.ylabels[j];
+            }
+            titleTextFrame.texts[0].appliedFont = myFont;
+            titleTextFrame.texts[0].fontStyle = "Bold";
+            titleTextFrame.texts[0].pointSize = gridAxesLabelFontSize;
+            titleTextFrame.parentStory.justification = Justification.CENTER_ALIGN;
+            titleTextFrame.fit(FitOptions.FRAME_TO_CONTENT);
+          }
         }
 
         if (grid.xlabel_type == "time") {
@@ -478,7 +533,6 @@ function drawGrid(grid) {
       titleTextFrame.textColumns.everyItem().fillColor = "black";
       titleTextFrame.fit(FitOptions.FRAME_TO_CONTENT);
     }
-
     if (grid.xlabel_type == "dose") {
       grad_trig = myPage.polygons.add();
       grad_trig.paths[0].entirePath = [
