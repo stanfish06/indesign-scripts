@@ -70,46 +70,50 @@ subGrid.prototype.setChildGrid = function (childGrid, position) {
   }
 };
 
-function getPageSize(grid) {
+function getPageSize(grid, config) {
+  // these need to be integrated into config later, but no need for now
+  const supSideBarWidth = 0;
+  const sideBarWidth = 0;
   if (grid == null) {
-    return [-gap + sideBarWidth, -gap];
+    return [-config.gap + sideBarWidth, -config.gap];
   } else {
-    const sz1 = getPageSize(grid.rightTop);
-    const sz2 = getPageSize(grid.rightBottom);
-    const sz3 = getPageSize(grid.bottomLeft);
-    const sz4 = getPageSize(grid.bottomRight);
+    const sz1 = getPageSize(grid.rightTop, config);
+    const sz2 = getPageSize(grid.rightBottom, config);
+    const sz3 = getPageSize(grid.bottomLeft, config);
+    const sz4 = getPageSize(grid.bottomRight, config);
 
     const bd_width = Math.max(
       sz1[0] +
-      gap +
-      grid.ncol * subGridWidth +
-      (grid.ncol - 1) * gap +
+      config.gap +
+      grid.ncol * config.subGridWidth +
+      (grid.ncol - 1) * config.gap +
       sideBarWidth + grid.gridMargin[0] + grid.gridMargin[1],
       sz2[0] +
-      gap +
-      grid.ncol * subGridWidth +
-      (grid.ncol - 1) * gap +
+      config.gap +
+      grid.ncol * config.subGridWidth +
+      (grid.ncol - 1) * config.gap +
       sideBarWidth + grid.gridMargin[0] + grid.gridMargin[1],
       sz3[0] + sideBarWidth + grid.gridMargin[0] + grid.gridMargin[1]
     );
     const bd_height = Math.max(
-      sz3[1] + gap + grid.nrow * subGridHeight + (grid.nrow - 1) * gap + titleBarHeight + grid.gridMargin[2] + grid.gridMargin[3],
-      sz4[1] + gap + grid.nrow * subGridHeight + (grid.nrow - 1) * gap + titleBarHeight + grid.gridMargin[2] + grid.gridMargin[3],
-      sz2[1] + titleBarHeight + grid.gridMargin[2] + grid.gridMargin[3],
+      sz3[1] + config.gap + grid.nrow * config.subGridHeight + (grid.nrow - 1) * config.gap + config.titleBarHeight + grid.gridMargin[2] + grid.gridMargin[3],
+      sz4[1] + config.gap + grid.nrow * config.subGridHeight + (grid.nrow - 1) * config.gap + config.titleBarHeight + grid.gridMargin[2] + grid.gridMargin[3],
+      sz2[1] + config.titleBarHeight + grid.gridMargin[2] + grid.gridMargin[3],
     );
     return [bd_width, bd_height];
   }
 }
 
-function drawGrid(grid) {
+function drawGrid(grid, myDoc, myPage, config) {
+  const sideBarWidth = 0;
   if (grid == null) {
     return;
   } else {
-    var gridOrigin_x = grid.origin_x + margin;
-    var gridOrigin_y = grid.origin_y + margin + supTitleBarHeight;
-    const gridWidth = grid.ncol * subGridWidth + (grid.ncol - 1) * gap + sideBarWidth + grid.gridMargin[0] + grid.gridMargin[1];
-    const gridHeight = grid.nrow * subGridHeight + (grid.nrow - 1) * gap + titleBarHeight + grid.gridMargin[2] + grid.gridMargin[3];
-    const gridRect = myDoc.pages.item(0).rectangles.add({
+    var gridOrigin_x = grid.origin_x + config.margin;
+    var gridOrigin_y = grid.origin_y + config.margin + config.supTitleBarHeight;
+    const gridWidth = grid.ncol * config.subGridWidth + (grid.ncol - 1) * config.gap + sideBarWidth + grid.gridMargin[0] + grid.gridMargin[1];
+    const gridHeight = grid.nrow * config.subGridHeight + (grid.nrow - 1) * config.gap + config.titleBarHeight + grid.gridMargin[2] + grid.gridMargin[3];
+    const gridRect = myPage.rectangles.add({
       geometricBounds: [
         gridOrigin_y,
         gridOrigin_x,
@@ -121,12 +125,12 @@ function drawGrid(grid) {
       strokeWeight: subGridFrameWidth,
       strokeType: grid.strokeType,
     });
-    drawGrid(grid.rightTop);
-    drawGrid(grid.rightBottom);
-    drawGrid(grid.bottomLeft);
-    drawGrid(grid.bottomRight);
-    gridOrigin_x = gridOrigin_x + subGridOffset;
-    gridOrigin_y = gridOrigin_y + subGridOffset;
+    drawGrid(grid.rightTop, myDoc, myPage, config);
+    drawGrid(grid.rightBottom, myDoc, myPage, config);
+    drawGrid(grid.bottomLeft, myDoc, myPage, config);
+    drawGrid(grid.bottomRight, myDoc, myPage, config);
+    gridOrigin_x = gridOrigin_x + config.subGridOffset;
+    gridOrigin_y = gridOrigin_y + config.subGridOffset;
 
     var next_img_index = 0;
     var fill_idx1 = grid.nrow;
@@ -527,9 +531,9 @@ function drawGrid(grid) {
         ],
       });
       titleTextFrame.contents = grid.title;
-      titleTextFrame.texts[0].appliedFont = myFont;
+      titleTextFrame.texts[0].appliedFont = "Arial";
       titleTextFrame.texts[0].fontStyle = "Bold";
-      titleTextFrame.texts[0].pointSize = titleFontSize;
+      titleTextFrame.texts[0].pointSize = config.titleFontSize;
       titleTextFrame.textColumns.everyItem().fillColor = "black";
       titleTextFrame.fit(FitOptions.FRAME_TO_CONTENT);
     }

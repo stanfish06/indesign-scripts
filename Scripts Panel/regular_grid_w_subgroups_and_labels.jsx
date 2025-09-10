@@ -1,197 +1,108 @@
-#include "../classes/grids.jsx";
-#include "../constants/colors.jsx";
+#include "./classes/grids.jsx";
+#include "./methods/setup.jsx";
 
 const supTitleBarHeight = 0;
-const supSideBarWidth = 0;
 const titleBarHeight = 40;
-const sideBarWidth = 0;
 const subGridWidth = 325;
 const subGridHeight = 300;
-const gridAxesLabelFontSize = 20;
+const gridAxesLabelFontSize = 15;
 const margin = 10;
 // margins for left, right, bottom, top
 const gap = 10;
 const subGridFrameWidth = 5;
 const subGridOffset = 5;
-var cropTop = 0; // Top crop
-var cropBottom = 0; // Bottom crop
-var cropLeft = 100; // Left crop
-var cropRight = 100; // Right crop
-
+const cropTop = 0; // Top crop
+const cropBottom = 0; // Bottom crop
+const cropLeft = 100; // Left crop
+const cropRight = 100; // Right crop
 const textGap = 20;
 const sideBarFontSize = 20;
-const titleFontSize = 26;
+const titleFontSize = 23;
 const titleFontColor = 'black';
-const textBox = [120, 60];
+const textBox = [80, 40];
 const mainTitle = "";
 
+/**
+ * Typical Usage:
+ *   1. Define one or more grids inside an array:
+ *        const gridList = [
+ *          new subGrid(
+ *            nrow, ncol,                 // number of rows, columns
+ *            title,                      // grid title (optional)
+ *            channelNames, channelColors,// side bar labels + colors
+ *            condition_list,             // array of image/condition names
+ *            folder_path, prefix, postfix, // image folder + file naming
+ *            gridFrameColor,             // stroke color for grid border
+ *            byRow,                      // fill order (true=row-wise, false=col-wise)
+ *            xlabel_type, xlabels,       // x-axis label type and values
+ *            ylabel_type, ylabels,       // y-axis label type and values
+ *            gridMargin,                 // [left, right, bottom, top] margins
+ *            strokeType                  // InDesign stroke style ("Solid", etc.)
+ *          )
+ *        ];
+ *
+ *   2. Attach child grids if needed:
+ *        gridList[0].setChildGrid(gridList[1], "bottomLeft");
+ *      Valid positions: "rightTop", "rightBottom", "bottomLeft", "bottomRight".
+**/
 const gridList = [
   new subGrid(
     1,
-    1,
-    "ESI PGC, control, 160k seed",
+    7,
+    "ESI PGC, varying day-2 activin dose",
     ["DAPI", "EOMES", "TFAP2C", "SOX17"],
     ["lightGray", "red", "green", "blue"],
     [
-      'C3A100;B50;B50'
+      'C6B50;B50A1;B50IWP2 (20k)',
+      'C6B50;B50A1;B50IWP2A1 (20k)',
+      'C6B50;B50A1;B50IWP2A3 (20k)',
+      'C6B50;B50A1;B50IWP2A10 (20k)',
+      'C6B50;B50A1;B50IWP2A10 (20k) (rep2)',
+      'C6B50;B50A1;B50IWP2A30 (20k)',
+      'C6B50;B50A1;B50IWP2A100 (20k)',
     ],
-    "",
+    "C:/Users/zhiyu/OneDrive - Umich/dump/2025-09-01/exp26/20k/scatter",
     "TFAP2C_EOMES_",
     "_scatter_SOX17.png",
-    "blockc_531",
+    "blockc_521",
     false,
     "",
     [],
     "",
     [],
-    [0, 0, 0, 40],
-    "Solid",
-  ),
+    [0, 0, 0, 0],
+    "Dashed",
+  )
 ];
-gridList[0].setChildGrid(gridList[1], 'rightTop')
+// TODO: bug: adding y labels to the last column appends extra space
+// Example:
+// gridList[0].setChildGrid(gridList[1], "bottomLeft");
 
+// setup and draw grid
 const rootGrid = 0;
-
-const pageSize = getPageSize(gridList[rootGrid]);
-
-var myFont = app.fonts.item("Arial");
-var myDoc = app.documents.add();
-defineColors(myDoc);
-
-// set measuremnet units to points
-myDoc.viewPreferences.horizontalMeasurementUnits = MeasurementUnits.points;
-myDoc.viewPreferences.verticalMeasurementUnits = MeasurementUnits.points;
-myDoc.viewPreferences.rulerOrigin = RulerOrigin.pageOrigin;
-
-// set document preferences, no need for facing pages
-myDoc.documentPreferences.facingPages = false;
-myDoc.documentPreferences.pageHeight =
-  pageSize[1] + 2 * margin + supTitleBarHeight;
-myDoc.documentPreferences.pageWidth = pageSize[0] - sideBarWidth + 2 * margin + supSideBarWidth;
-
-var myMasterSpread = myDoc.masterSpreads.item(0);
-var myMarginPreferences = myMasterSpread.pages.item(0).marginPreferences;
-
-//Now set up the page margins and columns.
-myMarginPreferences.left = margin;
-myMarginPreferences.top = margin;
-myMarginPreferences.right = margin;
-myMarginPreferences.bottom = margin;
-
-var myPage = myDoc.pages.item(0);
-myPage.rectangles.add({
-  geometricBounds: [
-    margin / 3,
-    margin / 3,
-    myDoc.documentPreferences.pageHeight - margin / 3,
-    myDoc.documentPreferences.pageWidth - margin / 3,
-  ],
-  strokeWeight: subGridFrameWidth,
-  strokeColor: "coolGray",
-  fillColor: "None",
-});
-
-
-// Add title text
-if (supTitleBarHeight > 0) {
-  var titleTextFrame = myPage.textFrames.add({
-    geometricBounds: [
-      margin,
-      margin,
-      margin + supTitleBarHeight,
-      margin + 1000,
-    ],
-  });
-  titleTextFrame.contents = mainTitle
-  titleTextFrame.texts[0].appliedFont = myFont;
-  titleTextFrame.texts[0].fontStyle = "Bold";
-  titleTextFrame.texts[0].pointSize = titleFontSize;
-  titleTextFrame.textColumns.everyItem().fillColor = "black";
-  titleTextFrame.fit(FitOptions.FRAME_TO_CONTENT);
-}
-
-if (supSideBarWidth > 0) {
-  // Add channel names to the sidebar
-  var yPosition = margin + supTitleBarHeight + textGap / 2;
-  var textFrame = myPage.textFrames.add({
-    geometricBounds: [
-      yPosition - textGap / 2, // top
-      pageSize[0] + 20, // left
-      yPosition + textGap / 2, // bottom
-      pageSize[0] + supSideBarWidth + 30, // right
-    ],
-  });
-  // Add the channel name text
-  // textFrame.contents = "channels:";
-  textFrame.contents = "E6: duplicate 1";
-  // Set the text formatting
-  textFrame.texts[0].appliedFont = myFont;
-  textFrame.texts[0].fontStyle = "Bold";
-  textFrame.texts[0].pointSize = sideBarFontSize;
-  textFrame.textColumns.everyItem().fillColor = "matlabOrange";
-  // fit content to frame
-  textFrame.fit(FitOptions.FRAME_TO_CONTENT);
-
-  var yPosition = yPosition + textGap;
-  var textFrame = myPage.textFrames.add({
-    geometricBounds: [
-      yPosition - textGap / 2, // top
-      pageSize[0] + 20, // left
-      yPosition + textGap / 2, // bottom
-      pageSize[0] + supSideBarWidth + 30, // right
-    ],
-  });
-  // Add the channel name text
-  // textFrame.contents = "channels:";
-  textFrame.contents = "E6: duplicate 2";
-  // Set the text formatting
-  textFrame.texts[0].appliedFont = myFont;
-  textFrame.texts[0].fontStyle = "Bold";
-  textFrame.texts[0].pointSize = sideBarFontSize;
-  textFrame.textColumns.everyItem().fillColor = "matlabDarkRed";
-  // fit content to frame
-  textFrame.fit(FitOptions.FRAME_TO_CONTENT);
-
-  var yPosition = yPosition + textGap;
-  var textFrame = myPage.textFrames.add({
-    geometricBounds: [
-      yPosition - textGap / 2, // top
-      pageSize[0] + 20, // left
-      yPosition + textGap / 2, // bottom
-      pageSize[0] + supSideBarWidth + 30, // right
-    ],
-  });
-  // Add the channel name text
-  // textFrame.contents = "channels:";
-  textFrame.contents = "mTeSR: duplicate 1";
-  // Set the text formatting
-  textFrame.texts[0].appliedFont = myFont;
-  textFrame.texts[0].fontStyle = "Bold";
-  textFrame.texts[0].pointSize = sideBarFontSize;
-  textFrame.textColumns.everyItem().fillColor = "matlabCyan";
-  // fit content to frame
-  textFrame.fit(FitOptions.FRAME_TO_CONTENT);
-
-
-  var yPosition = yPosition + textGap;
-  var textFrame = myPage.textFrames.add({
-    geometricBounds: [
-      yPosition - textGap / 2, // top
-      pageSize[0] + 20, // left
-      yPosition + textGap / 2, // bottom
-      pageSize[0] + supSideBarWidth + 30, // right
-    ],
-  });
-  // Add the channel name text
-  // textFrame.contents = "channels:";
-  textFrame.contents = "mTeSR: duplicate 2";
-  // Set the text formatting
-  textFrame.texts[0].appliedFont = myFont;
-  textFrame.texts[0].fontStyle = "Bold";
-  textFrame.texts[0].pointSize = sideBarFontSize;
-  textFrame.textColumns.everyItem().fillColor = "matlabBlue";
-  // fit content to frame
-  textFrame.fit(FitOptions.FRAME_TO_CONTENT);
-}
-
-drawGrid(gridList[rootGrid]);
+const config = {
+  supTitleBarHeight: supTitleBarHeight,
+  titleBarHeight: titleBarHeight,
+  subGridWidth: subGridWidth,
+  subGridHeight: subGridHeight,
+  gridAxesLabelFontSize: gridAxesLabelFontSize,
+  margin: margin,
+  gap: gap,
+  subGridFrameWidth: subGridFrameWidth,
+  subGridOffset: subGridOffset,
+  cropTop: cropTop,
+  cropBottom: cropBottom,
+  cropLeft: cropLeft,
+  cropRight: cropRight,
+  textGap: textGap,
+  sideBarFontSize: sideBarFontSize,
+  titleFontSize: titleFontSize,
+  titleFontColor: titleFontColor,
+  textBox: textBox,
+  mainTitle: mainTitle,
+  rootGrid: rootGrid,
+};
+const pageSize = getPageSize(gridList[rootGrid], config);
+config["pageSize"] = pageSize;
+doc = setup(app, config);
+drawGrid(gridList[rootGrid], doc[0], doc[1], config);
