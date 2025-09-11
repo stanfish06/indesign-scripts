@@ -44,35 +44,35 @@ function subGrid(
   this.strokeType = strokeType;
 }
 
-subGrid.prototype.setChildGrid = function (childGrid, position) {
+subGrid.prototype.setChildGrid = function (childGrid, position, config) {
+  const sideBarWidth = 0;
   if (position == "rightTop") {
     this.rightTop = childGrid;
-    childGrid.origin_x = this.origin_x + this.ncol * subGridWidth + (this.ncol - 1) * gap + gap + sideBarWidth + this.gridMargin[0] + this.gridMargin[1];
+    childGrid.origin_x = this.origin_x + this.ncol * config.subGridWidth + (this.ncol - 1) * config.gap + config.gap + sideBarWidth + this.gridMargin[0] + this.gridMargin[1];
     childGrid.origin_y = this.origin_y;
   } else if (position == "rightBottom") {
     this.rightBottom = childGrid;
     childGrid.origin_x =
-      this.origin_x + this.ncol * subGridWidth + (this.ncol - 1) * gap + gap + sideBarWidth + this.gridMargin[0] + this.gridMargin[1];
+      this.origin_x + this.ncol * config.subGridWidth + (this.ncol - 1) * config.gap + config.gap + sideBarWidth + this.gridMargin[0] + this.gridMargin[1];
     childGrid.origin_y =
-      this.origin_y + this.nrow * subGridHeight + (this.nrow - 1) * gap + gap + titleBarHeight + this.gridMargin[2] + this.gridMargin[3];
-    childGrid.origin_y = childGrid.origin_y - (childGrid.nrow * subGridHeight + (childGrid.nrow - 1) * gap + gap + titleBarHeight + childGrid.gridMargin[2] + childGrid.gridMargin[3]);
+      this.origin_y + this.nrow * config.subGridHeight + (this.nrow - 1) * config.gap + config.gap + config.titleBarHeight + this.gridMargin[2] + this.gridMargin[3];
+    childGrid.origin_y = childGrid.origin_y - (childGrid.nrow * config.subGridHeight + (childGrid.nrow - 1) * config.gap + config.gap + config.titleBarHeight + childGrid.gridMargin[2] + childGrid.gridMargin[3]);
   } else if (position == "bottomLeft") {
     this.bottomLeft = childGrid;
     childGrid.origin_x = this.origin_x;
     childGrid.origin_y =
-      this.origin_y + this.nrow * subGridHeight + (this.nrow - 1) * gap + gap + titleBarHeight + this.gridMargin[2] + this.gridMargin[3];
+      this.origin_y + this.nrow * config.subGridHeight + (this.nrow - 1) * config.gap + config.gap + config.titleBarHeight + this.gridMargin[2] + this.gridMargin[3];
   } else if (position == "bottomRight") {
     this.bottomRight = childGrid;
     childGrid.origin_x =
-      this.origin_x + this.ncol * subGridWidth + (this.ncol - 1) * gap - childGrid.ncol * subGridWidth - (childGrid.ncol - 1) * gap + this.gridMargin[0] + this.gridMargin[1];
+      this.origin_x + this.ncol * config.subGridWidth + (this.ncol - 1) * config.gap - childGrid.ncol * config.subGridWidth - (childGrid.ncol - 1) * config.gap + this.gridMargin[0] + this.gridMargin[1];
     childGrid.origin_y =
-      this.origin_y + this.nrow * subGridHeight + (this.nrow - 1) * gap + gap + titleBarHeight + this.gridMargin[2] + this.gridMargin[3];
+      this.origin_y + this.nrow * config.subGridHeight + (this.nrow - 1) * config.gap + config.gap + config.titleBarHeight + this.gridMargin[2] + this.gridMargin[3];
   }
 };
 
 function getPageSize(grid, config) {
   // these need to be integrated into config later, but no need for now
-  const supSideBarWidth = 0;
   const sideBarWidth = 0;
   if (grid == null) {
     return [-config.gap + sideBarWidth, -config.gap];
@@ -105,6 +105,7 @@ function getPageSize(grid, config) {
 }
 
 function drawGrid(grid, myDoc, myPage, config) {
+  var myFont = app.fonts.item("Arial");
   const sideBarWidth = 0;
   if (grid == null) {
     return;
@@ -122,7 +123,7 @@ function drawGrid(grid, myDoc, myPage, config) {
       ],
       fillColor: myDoc.swatches.item("Paper"),
       strokeColor: myDoc.swatches.item(grid.gridFrameColor),
-      strokeWeight: subGridFrameWidth,
+      strokeWeight: config.subGridFrameWidth,
       strokeType: grid.strokeType,
     });
     drawGrid(grid.rightTop, myDoc, myPage, config);
@@ -145,11 +146,11 @@ function drawGrid(grid, myDoc, myPage, config) {
           break;
         }
         if (grid.byRow) {
-          var subGridOrigin_x = gridOrigin_x + j * (subGridWidth + gap) + grid.gridMargin[0];
-          var subGridOrigin_y = gridOrigin_y + i * (subGridHeight + gap) + titleBarHeight + grid.gridMargin[3];
+          var subGridOrigin_x = gridOrigin_x + j * (config.subGridWidth + config.gap) + grid.gridMargin[0];
+          var subGridOrigin_y = gridOrigin_y + i * (config.subGridHeight + config.gap) + config.titleBarHeight + grid.gridMargin[3];
         } else {
-          var subGridOrigin_x = gridOrigin_x + i * (subGridWidth + gap) + grid.gridMargin[0];
-          var subGridOrigin_y = gridOrigin_y + j * (subGridHeight + gap) + titleBarHeight + grid.gridMargin[3];
+          var subGridOrigin_x = gridOrigin_x + i * (config.subGridWidth + config.gap) + grid.gridMargin[0];
+          var subGridOrigin_y = gridOrigin_y + j * (config.subGridHeight + config.gap) + config.titleBarHeight + grid.gridMargin[3];
         }
 
         // if (grid.byRow) {
@@ -179,8 +180,8 @@ function drawGrid(grid, myDoc, myPage, config) {
         //     subGridOrigin_x -= subGridOffset;
         //   }
         // }
-        var frameShrink_x = subGridOffset * 2;
-        var frameShrink_y = subGridOffset * 2;
+        var frameShrink_x = config.subGridOffset * 2;
+        var frameShrink_y = config.subGridOffset * 2;
         // if (grid.byRow) {
         //   if (i == grid.nrow - 1) {
         //     // subGridOrigin_y += subGridOffset;
@@ -204,8 +205,8 @@ function drawGrid(grid, myDoc, myPage, config) {
           geometricBounds: [
             subGridOrigin_y,
             subGridOrigin_x,
-            subGridOrigin_y + subGridHeight - frameShrink_y,
-            subGridOrigin_x + subGridWidth - frameShrink_x,
+            subGridOrigin_y + config.subGridHeight - frameShrink_y,
+            subGridOrigin_x + config.subGridWidth - frameShrink_x,
           ],
           fillColor: myDoc.swatches.item("Paper"),
           strokeWeight: 0.5,
@@ -216,7 +217,7 @@ function drawGrid(grid, myDoc, myPage, config) {
           if ((grid.byRow && j == 0) || (!grid.byRow && i == 0)) {
             var radius = grid.gridMargin[0] * 0.25;
             var cx = gridOrigin_x + grid.gridMargin[0] * 0.5;
-            var cy = subGridOrigin_y + subGridHeight * 0.5;
+            var cy = subGridOrigin_y + config.subGridHeight * 0.5;
             var circle = myPage.ovals.add();
             circle.geometricBounds = [
               cy - radius,
@@ -315,8 +316,8 @@ function drawGrid(grid, myDoc, myPage, config) {
         if (grid.xlabel_type == "time") {
           if ((grid.byRow && i == 0) || (!grid.byRow && j == 0)) {
             var radius = grid.gridMargin[3] * 0.75;
-            var cx = subGridOrigin_x + subGridWidth * 0.5
-            var cy = subGridOrigin_y - radius - textBox[1] * 0.5;
+            var cx = subGridOrigin_x + config.subGridWidth * 0.5
+            var cy = subGridOrigin_y - radius - config.textBox[1] * 0.5;
             var circle = myPage.ovals.add();
             circle.geometricBounds = [
               cy - radius,
@@ -340,9 +341,9 @@ function drawGrid(grid, myDoc, myPage, config) {
             var titleTextFrame = myPage.textFrames.add({
               geometricBounds: [
                 cy + radius * 1.2,
-                cx - textBox[0] * 0.5,
+                cx - config.textBox[0] * 0.5,
                 cy + radius * 1.2 + textBox[1],
-                cx + textBox[0] * 0.5
+                cx + config.textBox[0] * 0.5
               ],
             });
             if (grid.byRow) {
@@ -352,7 +353,7 @@ function drawGrid(grid, myDoc, myPage, config) {
             }
             titleTextFrame.texts[0].appliedFont = myFont;
             titleTextFrame.texts[0].fontStyle = "Bold";
-            titleTextFrame.texts[0].pointSize = gridAxesLabelFontSize;
+            titleTextFrame.texts[0].pointSize = config.gridAxesLabelFontSize;
             titleTextFrame.parentStory.justification = Justification.CENTER_ALIGN;
             titleTextFrame.fit(FitOptions.FRAME_TO_CONTENT);
           }
@@ -531,7 +532,7 @@ function drawGrid(grid, myDoc, myPage, config) {
         ],
       });
       titleTextFrame.contents = grid.title;
-      titleTextFrame.texts[0].appliedFont = "Arial";
+      titleTextFrame.texts[0].appliedFont = myFont;
       titleTextFrame.texts[0].fontStyle = "Bold";
       titleTextFrame.texts[0].pointSize = config.titleFontSize;
       titleTextFrame.textColumns.everyItem().fillColor = "black";
@@ -540,19 +541,19 @@ function drawGrid(grid, myDoc, myPage, config) {
     if (grid.xlabel_type == "dose") {
       grad_trig = myPage.polygons.add();
       grad_trig.paths[0].entirePath = [
-        [gridOrigin_x + grid.gridMargin[0] + subGridWidth * 0.5, gridOrigin_y + titleBarHeight + grid.gridMargin[3]],
-        [gridOrigin_x + gridWidth - subGridWidth * 0.5, gridOrigin_y + titleBarHeight + grid.gridMargin[3]],
-        [gridOrigin_x + gridWidth - subGridWidth * 0.5, gridOrigin_y + titleBarHeight + grid.gridMargin[3] * 0.5]
+        [gridOrigin_x + grid.gridMargin[0] + subGridWidth * 0.5, gridOrigin_y + config.titleBarHeight + grid.gridMargin[3]],
+        [gridOrigin_x + gridWidth - subGridWidth * 0.5, gridOrigin_y + config.titleBarHeight + grid.gridMargin[3]],
+        [gridOrigin_x + gridWidth - subGridWidth * 0.5, gridOrigin_y + config.titleBarHeight + grid.gridMargin[3] * 0.5]
       ];
       grad_trig.fillColor = "black";
       var grid_trig_width = gridOrigin_x + gridWidth - subGridWidth * 0.5 - (gridOrigin_x + grid.gridMargin[0] + subGridWidth * 0.5);
       for (var i = 0; i < grid.xlabels.length; i++) {
         var titleTextFrame = myPage.textFrames.add({
           geometricBounds: [
-            gridOrigin_y + subGridOffset + titleBarHeight,
-            gridOrigin_x + grid.gridMargin[0] + subGridWidth * 0.5 + (subGridWidth + gap) * i - textBox[0] * 0.5,
-            gridOrigin_y + subGridOffset + titleBarHeight + textBox[1],
-            gridOrigin_x + grid.gridMargin[0] + subGridWidth * 0.5 + (subGridWidth + gap) * i + textBox[0] * 0.5
+            gridOrigin_y + subGridOffset + config.titleBarHeight,
+            gridOrigin_x + grid.gridMargin[0] + subGridWidth * 0.5 + (subGridWidth + config.gap) * i - config.textBox[0] * 0.5,
+            gridOrigin_y + subGridOffset + config.titleBarHeight + config.textBox[1],
+            gridOrigin_x + grid.gridMargin[0] + subGridWidth * 0.5 + (subGridWidth + config.gap) * i + config.textBox[0] * 0.5
           ],
         });
         titleTextFrame.contents = grid.xlabels[i];
@@ -564,5 +565,37 @@ function drawGrid(grid, myDoc, myPage, config) {
       }
     }
 
+    if (grid.ylabel_type == "dose") {
+      var grad_trig = myPage.polygons.add();
+      var y_start = gridOrigin_y + config.titleBarHeight + grid.gridMargin[3] + config.subGridHeight * 0.5;
+      var y_end = gridOrigin_y + config.titleBarHeight + grid.gridMargin[3] + (grid.nrow - 1) * (config.subGridHeight + config.gap) + config.subGridHeight * 0.5;
+
+      grad_trig.paths[0].entirePath = [
+        [gridOrigin_x + grid.gridMargin[0] * 0.5, y_start],
+        [gridOrigin_x + grid.gridMargin[0], y_start],
+        [gridOrigin_x + grid.gridMargin[0], y_end]
+      ];
+      grad_trig.fillColor = "black";
+
+      for (var i = 0; i < grid.ylabels.length; i++) {
+        var y_center = gridOrigin_y + config.titleBarHeight + grid.gridMargin[3] + i * (config.subGridHeight + config.gap) + config.subGridHeight * 0.5;
+        var x_center = gridOrigin_x + grid.gridMargin[0] * 0.5;
+
+        var titleTextFrame = myPage.textFrames.add({
+          geometricBounds: [
+            y_center - config.textBox[1] * 0.5,
+            x_center - config.textBox[0] * 0.75,
+            y_center + config.textBox[1] * 0.5,
+            x_center + config.textBox[0] * 0.25
+          ],
+        });
+        titleTextFrame.contents = grid.ylabels[i];
+        titleTextFrame.texts[0].appliedFont = myFont;
+        titleTextFrame.texts[0].fontStyle = "Bold";
+        titleTextFrame.texts[0].pointSize = gridAxesLabelFontSize;
+        titleTextFrame.parentStory.justification = Justification.CENTER_ALIGN;
+        titleTextFrame.fit(FitOptions.FRAME_TO_CONTENT);
+      }
+    }
   }
 }
