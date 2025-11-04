@@ -93,7 +93,7 @@ function getPageSize(grid, config) {
       grid.ncol * config.subGridWidth +
       (grid.ncol - 1) * config.gap +
       sideBarWidth + grid.gridMargin[0] + grid.gridMargin[1],
-      sz3[0] + sideBarWidth + grid.gridMargin[0] + grid.gridMargin[1]
+      sz3[0]
     );
     const bd_height = Math.max(
       sz3[1] + config.gap + grid.nrow * config.subGridHeight + (grid.nrow - 1) * config.gap + config.titleBarHeight + grid.gridMargin[2] + grid.gridMargin[3],
