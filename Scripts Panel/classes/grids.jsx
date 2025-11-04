@@ -317,7 +317,7 @@ function drawGrid(grid, myDoc, myPage, config) {
           if ((grid.byRow && i == 0) || (!grid.byRow && j == 0)) {
             var radius = grid.gridMargin[3] * 0.75;
             var cx = subGridOrigin_x + config.subGridWidth * 0.5
-            var cy = subGridOrigin_y - radius - config.textBox[1] * 0.5;
+            var cy = subGridOrigin_y - radius - config.textBox[1] * 0.75;
             var circle = myPage.ovals.add();
             circle.geometricBounds = [
               cy - radius,
@@ -550,7 +550,7 @@ function drawGrid(grid, myDoc, myPage, config) {
       for (var i = 0; i < grid.xlabels.length; i++) {
         var titleTextFrame = myPage.textFrames.add({
           geometricBounds: [
-            gridOrigin_y + subGridOffset + config.titleBarHeight,
+            gridOrigin_y + subGridOffset + config.titleBarHeight - config.textBox[0] * 0.5,
             gridOrigin_x + grid.gridMargin[0] + subGridWidth * 0.5 + (subGridWidth + config.gap) * i - config.textBox[0] * 0.5,
             gridOrigin_y + subGridOffset + config.titleBarHeight + config.textBox[1],
             gridOrigin_x + grid.gridMargin[0] + subGridWidth * 0.5 + (subGridWidth + config.gap) * i + config.textBox[0] * 0.5
@@ -585,6 +585,51 @@ function drawGrid(grid, myDoc, myPage, config) {
           geometricBounds: [
             y_center - config.textBox[1] * 0.5,
             x_center - config.textBox[0] * 0.75,
+            y_center + config.textBox[1] * 0.5,
+            x_center + config.textBox[0] * 0.25
+          ],
+        });
+        titleTextFrame.contents = grid.ylabels[i];
+        titleTextFrame.texts[0].appliedFont = myFont;
+        titleTextFrame.texts[0].fontStyle = "Bold";
+        titleTextFrame.texts[0].pointSize = gridAxesLabelFontSize;
+        titleTextFrame.parentStory.justification = Justification.CENTER_ALIGN;
+        titleTextFrame.fit(FitOptions.FRAME_TO_CONTENT);
+      }
+    }
+    // TODO: refine the code
+    if (grid.ylabel_type == "arrow") {
+      var y_start = gridOrigin_y + config.titleBarHeight + grid.gridMargin[3] + config.subGridHeight * 0.5;
+      var y_end = gridOrigin_y + config.titleBarHeight + grid.gridMargin[3] + (grid.nrow - 1) * (config.subGridHeight + config.gap) + config.subGridHeight * 0.5;
+      var x_pos = gridOrigin_x + grid.gridMargin[0] * 0.5;
+
+      var arrow_shaft = myPage.graphicLines.add();
+      arrow_shaft.paths[0].entirePath = [
+        [x_pos, y_start],
+        [x_pos, y_end]
+      ];
+      arrow_shaft.strokeWeight = 4;
+      arrow_shaft.strokeColor = "black";
+
+      var arrowhead = myPage.polygons.add();
+      var arrowhead_width = grid.gridMargin[0] * 0.2;
+      var arrowhead_height = config.subGridHeight * 0.1;
+
+      arrowhead.paths[0].entirePath = [
+        [x_pos, y_end],
+        [x_pos - arrowhead_width, y_end - arrowhead_height],
+        [x_pos + arrowhead_width, y_end - arrowhead_height]
+      ];
+      arrowhead.fillColor = "black";
+      arrowhead.strokeWeight = 0;
+
+      for (var i = 0; i < grid.ylabels.length; i++) {
+        var y_center = gridOrigin_y + config.titleBarHeight + grid.gridMargin[3] + i * (config.subGridHeight + config.gap) + config.subGridHeight * 0.5;
+        var x_center = gridOrigin_x + grid.gridMargin[0] * 0.5;
+        var titleTextFrame = myPage.textFrames.add({
+          geometricBounds: [
+            y_center - config.textBox[1] * 0.5,
+            x_center - config.textBox[0],
             y_center + config.textBox[1] * 0.5,
             x_center + config.textBox[0] * 0.25
           ],
