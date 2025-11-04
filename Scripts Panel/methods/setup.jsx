@@ -59,14 +59,14 @@ function setup(app, config) {
 
   if (config.supSideBarWidth > 0) {
     // Add channel names to the sidebar
-    var yPosition = config.margin + config.supTitleBarHeight + config.textGap / 2;
+    var yPosition = config.margin + config.supTitleBarHeight + config.textGap / 2 + config.supSideBarPosOffset[1];
     for (var i = 0; i < config.sideBarLabels.length; i++) {
       var textFrame = myPage.textFrames.add({
         geometricBounds: [
-          yPosition - config.textGap / 2, // top
-          pageSize[0] + 20, // left
-          yPosition + config.textGap / 2, // bottom
-          pageSize[0] + config.supSideBarWidth + 30, // right
+          yPosition - config.textGap * config.supSideBarSizeAdj[0] / 2, // top
+          pageSize[0] + config.supSideBarPosOffset[0] + 20, // left
+          yPosition + config.textGap * config.supSideBarSizeAdj[0] / 2, // bottom
+          pageSize[0] + config.supSideBarPosOffset[0] + config.supSideBarWidth * config.supSideBarSizeAdj[1] + 30, // right
         ],
       });
       textFrame.contents = config.sideBarLabels[i].text;
