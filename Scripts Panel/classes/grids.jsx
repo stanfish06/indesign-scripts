@@ -36,6 +36,7 @@ function subGrid(
   ylabels,
   gridMargin,
   strokeType,
+  wellIndicator  // Optional: well plate indicator configuration
 ) {
   this.rightTop = null;
   this.rightBottom = null;
@@ -60,6 +61,7 @@ function subGrid(
   this.ylabels = ylabels;
   this.gridMargin = gridMargin;
   this.strokeType = strokeType;
+  this.wellIndicator = wellIndicator || null;  // {enabled, plateRows, plateCols, wellPositions, position, offset, size, strokeWeight}
 }
 
 subGrid.prototype.setChildGrid = function (childGrid, position, config) {
@@ -366,12 +368,12 @@ function drawGrid(grid, myDoc, myPage, config) {
         subGridRect.frameFittingOptions.bottomCrop = cropBottom;
         subGridRect.frameFittingOptions.leftCrop = cropLeft;
         subGridRect.frameFittingOptions.rightCrop = cropRight;
-      }
-      // add channel names
-    }
 
-    // Note: Per-grid sidebar rendering is disabled. Use main sidebar in setup.jsx instead.
-    // sideBarWidth is hardcoded to 0 at the top of this function.
+        if (grid.wellIndicator && grid.wellIndicator.enabled) {
+          drawWellIndicator(myPage, subGridRect, grid.wellIndicator, nextImgIndex - 1, grid);
+        }
+      }
+    }
 
     if (titleBarHeight > 0) {
       var titleTextFrame = myPage.textFrames.add({
@@ -493,6 +495,126 @@ function drawGrid(grid, myDoc, myPage, config) {
         titleTextFrame.fit(FitOptions.FRAME_TO_CONTENT);
       }
     }
+  }
+}
+
+function drawWellIndicator(myPage, imageRect, wellConfig, imgIndex, grid) {
+  if (!wellConfig || !wellConfig.enabled) {
+    return;
+  }
+
+  var plateRows = wellConfig.plateRows || 3;
+  var plateCols = wellConfig.plateCols || 6;
+  var position = wellConfig.position || "bottomRight";
+  var offset = wellConfig.offset || [5, 5];
+  var size = wellConfig.size || 30;
+  var strokeWeight = wellConfig.strokeWeight || 0.5;
+  var bgOpacity = wellConfig.bgOpacity || 80;
+  var checkColor = wellConfig.checkColor || "red";
+
+
+  var imgBounds = imageRect.geometricBounds;
+  var imgTop = imgBounds[0];
+  var imgLeft = imgBounds[1];
+  var imgBottom = imgBounds[2];
+  var imgRight = imgBounds[3];
+
+
+  var indicatorX, indicatorY;
+  switch (position) {
+    case "topLeft":
+      indicatorX = imgLeft + offset[0];
+      indicatorY = imgTop + offset[1];
+      break;
+    case "topRight":
+      indicatorX = imgRight - size - offset[0];
+      indicatorY = imgTop + offset[1];
+      break;
+    case "bottomLeft":
+      indicatorX = imgLeft + offset[0];
+      indicatorY = imgBottom - size - offset[1];
+      break;
+    case "bottomRight":
+    default:
+      indicatorX = imgRight - size - offset[0];
+      indicatorY = imgBottom - size - offset[1];
+      break;
+  }
+
+
+  var bgRect = myPage.rectangles.add({
+    geometricBounds: [
+      indicatorY,
+      indicatorX,
+      indicatorY + size,
+      indicatorX + size
+    ],
+    fillColor: "Paper",
+    strokeWeight: 0
+  });
+  bgRect.transparencySettings.blendingSettings.opacity = bgOpacity;
+
+
+  var cellWidth = size / plateCols;
+  var cellHeight = size / plateRows;
+
+
+  for (var i = 0; i <= plateRows; i++) {
+    var line = myPage.graphicLines.add();
+    line.paths[0].entirePath = [
+      [indicatorX, indicatorY + i * cellHeight],
+      [indicatorX + size, indicatorY + i * cellHeight]
+    ];
+    line.strokeWeight = strokeWeight;
+    line.strokeColor = "Black";
+  }
+
+  for (var j = 0; j <= plateCols; j++) {
+    var line = myPage.graphicLines.add();
+    line.paths[0].entirePath = [
+      [indicatorX + j * cellWidth, indicatorY],
+      [indicatorX + j * cellWidth, indicatorY + size]
+    ];
+    line.strokeWeight = strokeWeight;
+    line.strokeColor = "Black";
+  }
+
+
+
+  if (wellConfig.wellPositions && imgIndex < wellConfig.wellPositions.length) {
+    var wellPos = wellConfig.wellPositions[imgIndex];
+    if (wellPos.length == 0) {
+      return;
+    }
+    var wellRow = wellPos[0];
+    var wellCol = wellPos[1];
+
+
+    var wellCenterX = indicatorX + (wellCol + ICON_CENTER_POSITION) * cellWidth;
+    var wellCenterY = indicatorY + (wellRow + ICON_CENTER_POSITION) * cellHeight;
+
+
+    var checkSize = Math.min(cellWidth, cellHeight) * 0.6;
+
+
+    var check1 = myPage.graphicLines.add();
+    check1.paths[0].entirePath = [
+      [wellCenterX - checkSize * 0.3, wellCenterY],
+      [wellCenterX - checkSize * 0.1, wellCenterY + checkSize * 0.3]
+    ];
+    check1.strokeWeight = strokeWeight * 3;
+    check1.strokeColor = checkColor;
+    check1.endCap = EndCap.ROUND_END_CAP;
+
+
+    var check2 = myPage.graphicLines.add();
+    check2.paths[0].entirePath = [
+      [wellCenterX - checkSize * 0.1, wellCenterY + checkSize * 0.3],
+      [wellCenterX + checkSize * 0.35, wellCenterY - checkSize * 0.35]
+    ];
+    check2.strokeWeight = strokeWeight * 3;
+    check2.strokeColor = checkColor;
+    check2.endCap = EndCap.ROUND_END_CAP;
   }
 }
 
