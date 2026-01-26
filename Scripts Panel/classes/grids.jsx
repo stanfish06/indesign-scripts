@@ -36,7 +36,8 @@ function subGrid(
   ylabels,
   gridMargin,
   strokeType,
-  wellIndicator  // Optional: well plate indicator configuration
+  wellIndicator,
+  imageInsets
 ) {
   this.rightTop = null;
   this.rightBottom = null;
@@ -61,7 +62,8 @@ function subGrid(
   this.ylabels = ylabels;
   this.gridMargin = gridMargin;
   this.strokeType = strokeType;
-  this.wellIndicator = wellIndicator || null;  // {enabled, plateRows, plateCols, wellPositions, position, offset, size, strokeWeight}
+  this.wellIndicator = wellIndicator || null;
+  this.imageInsets = imageInsets || null;
 }
 
 subGrid.prototype.setChildGrid = function (childGrid, position, config) {
@@ -372,6 +374,10 @@ function drawGrid(grid, myDoc, myPage, config) {
         if (grid.wellIndicator && grid.wellIndicator.enabled) {
           drawWellIndicator(myPage, subGridRect, grid.wellIndicator, nextImgIndex - 1, grid);
         }
+
+        if (grid.imageInsets && grid.imageInsets.enabled) {
+          drawInsets(myPage, subGridRect, grid.imageInsets, nextImgIndex - 1, grid);
+        }
       }
     }
 
@@ -503,6 +509,13 @@ function drawWellIndicator(myPage, imageRect, wellConfig, imgIndex, grid) {
     return;
   }
 
+  if (wellConfig.wellPositions && imgIndex < wellConfig.wellPositions.length) {
+    var wellPos = wellConfig.wellPositions[imgIndex];
+    if (!wellPos || wellPos.length === 0) {
+      return;
+    }
+  }
+
   var plateRows = wellConfig.plateRows || 3;
   var plateCols = wellConfig.plateCols || 6;
   var position = wellConfig.position || "bottomRight";
@@ -583,9 +596,6 @@ function drawWellIndicator(myPage, imageRect, wellConfig, imgIndex, grid) {
 
   if (wellConfig.wellPositions && imgIndex < wellConfig.wellPositions.length) {
     var wellPos = wellConfig.wellPositions[imgIndex];
-    if (wellPos.length == 0) {
-      return;
-    }
     var wellRow = wellPos[0];
     var wellCol = wellPos[1];
 
@@ -615,6 +625,215 @@ function drawWellIndicator(myPage, imageRect, wellConfig, imgIndex, grid) {
     check2.strokeWeight = strokeWeight * 3;
     check2.strokeColor = checkColor;
     check2.endCap = EndCap.ROUND_END_CAP;
+  }
+}
+
+function calculateInsetBounds(imgBounds, position, offset, size) {
+  var imgTop = imgBounds[0];
+  var imgLeft = imgBounds[1];
+  var imgBottom = imgBounds[2];
+  var imgRight = imgBounds[3];
+
+  var insetX, insetY;
+
+  switch (position) {
+    case "topLeft":
+      insetX = imgLeft + offset[0];
+      insetY = imgTop + offset[1];
+      break;
+    case "topRight":
+      insetX = imgRight - size[0] - offset[0];
+      insetY = imgTop + offset[1];
+      break;
+    case "bottomLeft":
+      insetX = imgLeft + offset[0];
+      insetY = imgBottom - size[1] - offset[1];
+      break;
+    case "bottomRight":
+      insetX = imgRight - size[0] - offset[0];
+      insetY = imgBottom - size[1] - offset[1];
+      break;
+    case "custom":
+      insetX = imgLeft + offset[0];
+      insetY = imgTop + offset[1];
+      break;
+    default:
+      insetX = imgRight - size[0] - offset[0];
+      insetY = imgBottom - size[1] - offset[1];
+  }
+
+  return [insetY, insetX, insetY + size[1], insetX + size[0]];
+}
+
+function getApplicableInsets(insetConfig, imgIndex) {
+  if (!insetConfig || !insetConfig.enabled) {
+    return [];
+  }
+
+  if (insetConfig.perImageConfigs && insetConfig.perImageConfigs[imgIndex]) {
+    return insetConfig.perImageConfigs[imgIndex].insets || [];
+  }
+
+  if (insetConfig.applyToIndices && insetConfig.applyToIndices.length > 0) {
+    var found = false;
+    for (var i = 0; i < insetConfig.applyToIndices.length; i++) {
+      if (insetConfig.applyToIndices[i] === imgIndex) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      return [];
+    }
+  } else if (!insetConfig.applyToAll) {
+    return [];
+  }
+
+  return insetConfig.insets || [];
+}
+
+function drawInsets(myPage, imageRect, insetConfig, imgIndex, grid) {
+  if (!insetConfig || !insetConfig.enabled) {
+    return;
+  }
+
+  var imgBounds = imageRect.geometricBounds;
+  var imgTop = imgBounds[0];
+  var imgLeft = imgBounds[1];
+  var imgBottom = imgBounds[2];
+  var imgRight = imgBounds[3];
+  var imgWidth = imgRight - imgLeft;
+  var imgHeight = imgBottom - imgTop;
+
+  var applicableInsets = getApplicableInsets(insetConfig, imgIndex);
+
+  applicableInsets.sort(function (a, b) {
+    var aZ = a.zIndex || 0;
+    var bZ = b.zIndex || 0;
+    return aZ - bZ;
+  });
+
+  for (var i = 0; i < applicableInsets.length; i++) {
+    var inset = applicableInsets[i];
+
+    var position = inset.position || "bottomRight";
+    var offset = inset.offset || [10, 10];
+    var size = inset.size || [100, 100];
+    var showIndicatorBox = inset.showIndicatorBox !== false;
+    var showConnector = inset.showConnector !== false;
+
+    var insetBounds = calculateInsetBounds(imgBounds, position, offset, size);
+
+    var insetRect = myPage.rectangles.add();
+    insetRect.geometricBounds = insetBounds;
+    insetRect.fillColor = "Paper";
+    insetRect.strokeWeight = (inset.border && inset.border.strokeWeight) || 2;
+    insetRect.strokeColor = (inset.border && inset.border.strokeColor) || "Black";
+
+    if (inset.sourceImagePath) {
+      var insetFile = File(inset.sourceImagePath);
+      try {
+        if (insetFile.exists) {
+          insetRect.place(insetFile);
+          insetRect.fit(FitOptions.FILL_PROPORTIONALLY);
+        } else {
+          missingImages.push({
+            path: inset.sourceImagePath,
+            condition: "inset for " + grid.conditionList[imgIndex],
+            gridTitle: grid.title
+          });
+        }
+      } catch (e) {
+        missingImages.push({
+          path: inset.sourceImagePath,
+          condition: "inset for " + grid.conditionList[imgIndex],
+          gridTitle: grid.title,
+          error: e.toString()
+        });
+      }
+    } else if (inset.sourceRegion && imageRect.allGraphics.length > 0) {
+      try {
+        var mainImage = imageRect.allGraphics[0];
+        var imagePath = mainImage.itemLink.filePath;
+        var insetFile = File(imagePath);
+
+        if (insetFile.exists) {
+          insetRect.place(insetFile);
+          var placedImage = insetRect.allGraphics[0];
+
+          var region = inset.sourceRegion;
+
+          var sourceOffset = inset.sourceOffset || { x: 0, y: 0 };
+          var extractX = region.x + sourceOffset.x;
+          var extractY = region.y + sourceOffset.y;
+
+          var mainImageBounds = imageRect.allGraphics[0].geometricBounds;
+          var mainImageWidth = mainImageBounds[3] - mainImageBounds[1];
+          var mainImageHeight = mainImageBounds[2] - mainImageBounds[0];
+
+          var frameWidth = insetBounds[3] - insetBounds[1];
+          var frameHeight = insetBounds[2] - insetBounds[0];
+
+          var regionWidthInMain = region.width * mainImageWidth;
+          var regionHeightInMain = region.height * mainImageHeight;
+
+          var scaleX = frameWidth / regionWidthInMain;
+          var scaleY = frameHeight / regionHeightInMain;
+          var scale = Math.max(scaleX, scaleY);
+
+          var targetWidth = mainImageWidth * scale;
+          var targetHeight = mainImageHeight * scale;
+
+          var regionCenterX = (extractX + region.width / 2);
+          var regionCenterY = (extractY + region.height / 2);
+
+          var frameCenterX = (insetBounds[1] + insetBounds[3]) / 2;
+          var frameCenterY = (insetBounds[0] + insetBounds[2]) / 2;
+
+          var imageLeft = frameCenterX - regionCenterX * targetWidth;
+          var imageTop = frameCenterY - regionCenterY * targetHeight;
+
+          placedImage.geometricBounds = [
+            imageTop,
+            imageLeft,
+            imageTop + targetHeight,
+            imageLeft + targetWidth
+          ];
+        }
+      } catch (e) {
+      }
+    }
+
+    if (showIndicatorBox && inset.sourceRegion) {
+      var region = inset.sourceRegion;
+      var boxLeft = imgLeft + region.x * imgWidth;
+      var boxTop = imgTop + region.y * imgHeight;
+      var boxWidth = region.width * imgWidth;
+      var boxHeight = region.height * imgHeight;
+
+      var indicatorRect = myPage.rectangles.add();
+      indicatorRect.geometricBounds = [boxTop, boxLeft, boxTop + boxHeight, boxLeft + boxWidth];
+      indicatorRect.fillColor = "None";
+      indicatorRect.strokeWeight = (inset.indicatorBox && inset.indicatorBox.strokeWeight) || 2;
+      indicatorRect.strokeColor = (inset.indicatorBox && inset.indicatorBox.strokeColor) || "Black";
+    }
+
+    if (showConnector && inset.sourceRegion && showIndicatorBox) {
+      var region = inset.sourceRegion;
+      var boxCenterX = imgLeft + (region.x + region.width / 2) * imgWidth;
+      var boxCenterY = imgTop + (region.y + region.height / 2) * imgHeight;
+
+      var insetCenterX = (insetBounds[1] + insetBounds[3]) / 2;
+      var insetCenterY = (insetBounds[0] + insetBounds[2]) / 2;
+
+      var connectorLine = myPage.graphicLines.add();
+      connectorLine.paths[0].entirePath = [
+        [boxCenterX, boxCenterY],
+        [insetCenterX, insetCenterY]
+      ];
+      connectorLine.strokeWeight = (inset.connector && inset.connector.strokeWeight) || 1;
+      connectorLine.strokeColor = (inset.connector && inset.connector.strokeColor) || "Black";
+    }
   }
 }
 
